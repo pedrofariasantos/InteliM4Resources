@@ -1,0 +1,90 @@
+#include <Adafruit_NeoPixel.h>
+
+
+#define LED1_PIN 2
+#define LED2_PIN 4
+#define LED3_PIN 12
+#define LED4_PIN 13
+#define BUTTON1_PIN 14
+#define BUTTON2_PIN 15
+#define BUTTON3_PIN 16
+#define BUTTON4_PIN 17
+#define RESET_BUTTON_PIN 18
+
+#define NUM_LEDS 4
+
+#define MAX_EVENTS 4
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, LED1_PIN, NEO_GRB + NEO_KHZ800);
+
+int sequence[MAX_EVENTS];
+int currentEvent = 0;
+int userSequence[MAX_EVENTS];
+int userEvent = 0;
+
+void setup() {
+  pinMode(BUTTON1_PIN, INPUT_PULLUP);
+  pinMode(BUTTON2_PIN, INPUT_PULLUP);
+  pinMode(BUTTON3_PIN, INPUT_PULLUP);
+  pinMode(BUTTON4_PIN, INPUT_PULLUP);
+  pinMode(RESET_BUTTON_PIN, INPUT_PULLUP);
+
+  pixels.begin();
+  pixels.show();
+}
+
+void loop() {
+  if (digitalRead(RESET_BUTTON_PIN) == LOW) {
+    // Reinicia o jogo
+    resetGame();
+  }
+
+  if (userEvent == currentEvent) {
+    int newEvent = random(0, NUM_LEDS);
+    addEventToSequence(newEvent);
+    showSequence();
+    userEvent = 0;
+  }
+
+  checkButton(BUTTON1_PIN, 0);
+  checkButton(BUTTON2_PIN, 1);
+  checkButton(BUTTON3_PIN, 2);
+  checkButton(BUTTON4_PIN, 3);
+}
+
+void checkButton(int buttonPin, int buttonNumber) {
+  if (digitalRead(buttonPin) == LOW) {
+    userSequence[userEvent] = buttonNumber;
+    userEvent++;
+
+    if (userSequence[userEvent - 1] != sequence[userEvent - 1]) {
+      resetGame();
+    }
+  }
+}
+
+void addEventToSequence(int event) {
+  sequence[currentEvent] = event;
+  currentEvent++;
+}
+
+void showSequence() {
+  for (int i = 0; i < currentEvent; i++) {
+    int ledColor = sequence[i] == 0 ? pixels.Color(255, 0, 0) :  // Red
+                   sequence[i] == 1 ? pixels.Color(0, 255, 0) :  // Green
+                   sequence[i] == 2 ? pixels.Color(0, 0, 255) :  // Blue
+                                      pixels.Color(255, 255, 0);   // Yellow
+
+    pixels.setPixelColor(sequence[i], ledColor);
+    pixels.show();
+    delay(500);
+    pixels.setPixelColor(sequence[i], pixels.Color(0, 0, 0));
+    pixels.show();
+    delay(200);
+  }
+}
+
+void resetGame() {
+  currentEvent = 0;
+  userEvent = 0;
+}
